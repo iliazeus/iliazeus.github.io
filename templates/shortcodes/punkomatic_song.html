@@ -38,6 +38,10 @@
   .punkomatic-song audio {
     width: 100%;
   }
+
+  .punkomatic-song pre > code {
+    user-select: all;
+  }
 </style>
 
 <script type="module">
@@ -67,11 +71,11 @@
     const audio = await pm.renderSong(song, {
       baseSoundPath: "/punkomatic-samples/",
       onprogress: (c, t) => {
-        audioDiv.innerText = `rendering song... ${(100 * c / t).toFixed(2)}% done`;
+        audioDiv.innerText = `rendering song... ${((100 * c) / t).toFixed(2)}% done`;
       },
     });
 
-    audioDiv.innerText = "encoding song..."
+    audioDiv.innerText = "encoding song...";
     const file = await pm.encodeSong(song, audio);
 
     const audioElt = document.createElement("audio");
