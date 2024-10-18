@@ -2,12 +2,11 @@
 base_url = "https://iliazeus.lol"
 
 compile_sass = true
-build_search_index = false
 generate_feeds = true
 
 [markdown]
-# Whether to do syntax highlighting
-# Theme can be customised by setting the `highlight_theme` variable to a theme supported by Zola
+external_links_target_blank = true
+
 highlight_code = true
 highlight_theme = "css"
 highlight_themes_css = [

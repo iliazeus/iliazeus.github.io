@@ -2,19 +2,30 @@
   <div
     id="3d-{{ model | slugify }}"
     class="online_3d_viewer"
-    {% if poster %} style="cursor: pointer; background: no-repeat center/100% url({{ poster | safe }})" {% endif %}
+    {% if poster %}style="cursor: pointer; background: no-repeat center/100%
+    url({{ poster | safe }})"{% endif %}
   ></div>
 
-  <div class="if-js"><small>
-    model preview powered by <a href="https://github.com/kovacsv/Online3DViewer">Online 3D Viewer</a>,
-    <br /> using my <a href="https://github.com/iliazeus/zmbx2gltf">Mecabricks-to-glTF converter</a>
-  </small></div>
+  <div class="if-js">
+    <small>
+      model preview powered by
+      <a href="https://github.com/kovacsv/Online3DViewer">Online 3D Viewer</a>, <br />
+      using my <a href="https://github.com/iliazeus/zmbx2gltf">Mecabricks-to-glTF converter</a>
+    </small>
+  </div>
 
-  <div class="if-not-js"><small>Enable JavaScript for interactive 3D model preview and glTF download.</small></div>
+  <div class="if-not-js">
+    <small>Enable JavaScript for interactive 3D model preview and glTF download.</small>
+  </div>
 
   <div>
-    <small>download: <a href="{{ model | safe }}" download>zmbx (Mecabricks)</a><span class="if-js">,
-    <a style="cursor: pointer" id="download-gltf-{{ model | slugify }}" download>glTF</a></span>.</small>
+    <small
+      >download: <a href="{{ model | safe }}" download>zmbx (Mecabricks)</a
+      ><span class="if-js"
+        >,
+        <a style="cursor: pointer" id="download-gltf-{{ model | slugify }}" download>glTF</a></span
+      >.</small
+    >
   </div>
 </figure>
 
@@ -42,24 +53,26 @@
       let zmbx2gltfScript = document.getElementById("zmbx2gltf-script");
 
       await Promise.all([
-        o3dvScript || new Promise((cb) => {
-          o3dvScript = Object.assign(document.createElement("script"), {
-            id: "o3dv-script",
-            async: true,
-            src: "/o3dv-0.8.22.min.js",
-          });
-          o3dvScript.onload = cb;
-          document.body.appendChild(o3dvScript);
-        }),
-        zmbx2gltfScript || new Promise((cb) => {
-          zmbx2gltfScript = Object.assign(document.createElement("script"), {
-            id: "zmbx2gltf-script",
-            async: true,
-            src: "/zmbx2gltf-0.2.1.bundle.js",
-          });
-          zmbx2gltfScript.onload = cb;
-          document.body.appendChild(zmbx2gltfScript);
-        }),
+        o3dvScript ||
+          new Promise((cb) => {
+            o3dvScript = Object.assign(document.createElement("script"), {
+              id: "o3dv-script",
+              async: true,
+              src: "/o3dv-0.8.22.min.js",
+            });
+            o3dvScript.onload = cb;
+            document.body.appendChild(o3dvScript);
+          }),
+        zmbx2gltfScript ||
+          new Promise((cb) => {
+            zmbx2gltfScript = Object.assign(document.createElement("script"), {
+              id: "zmbx2gltf-script",
+              async: true,
+              src: "/zmbx2gltf-0.2.1.bundle.js",
+            });
+            zmbx2gltfScript.onload = cb;
+            document.body.appendChild(zmbx2gltfScript);
+          }),
       ]);
 
       viewerElement.innerText = "Loading model...";
@@ -76,25 +89,24 @@
 
       viewerElement.replaceChildren();
 
-      const embeddedViewer = OV.Init3DViewerFromFileList(
-        viewerElement,
-        [gltfFile],
-        {
-          edgeSettings: new OV.EdgeSettings(true, new OV.RGBColor(0, 0, 0), 32),
-          backgroundColor: new OV.RGBAColor(0, 0, 0, 0),
-          environmentSettings: new OV.EnvironmentSettings([
-            "/envmaps/citadella/posx.jpg", "/envmaps/citadella/negx.jpg",
-            "/envmaps/citadella/posy.jpg", "/envmaps/citadella/negy.jpg",
-            "/envmaps/citadella/posz.jpg", "/envmaps/citadella/negz.jpg",
-          ]),
-          onModelLoaded: () => {
-            viewerElement.style.background = null;
-            viewerElement.style.cursor = "grab";
-          },
+      const embeddedViewer = OV.Init3DViewerFromFileList(viewerElement, [gltfFile], {
+        edgeSettings: new OV.EdgeSettings(true, new OV.RGBColor(0, 0, 0), 32),
+        backgroundColor: new OV.RGBAColor(0, 0, 0, 0),
+        environmentSettings: new OV.EnvironmentSettings([
+          "/envmaps/citadella/posx.jpg",
+          "/envmaps/citadella/negx.jpg",
+          "/envmaps/citadella/posy.jpg",
+          "/envmaps/citadella/negy.jpg",
+          "/envmaps/citadella/posz.jpg",
+          "/envmaps/citadella/negz.jpg",
+        ]),
+        onModelLoaded: () => {
+          viewerElement.style.background = null;
+          viewerElement.style.cursor = "grab";
         },
-      );
+      });
 
       window["3d-{{ model | slugify }}"] = embeddedViewer;
-    };
+    }
   })();
 </script>

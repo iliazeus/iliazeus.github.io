@@ -4,21 +4,28 @@
 {% block title %}{{ page.title }} | iliazeus{% endblock title %}
 
 {% block head %}
-{{ super() }}
-<meta name="description" content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus" />
+  {{ super() }}
+  <meta
+    name="description"
+    content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus"
+  />
 {% endblock head %}
 
 {% block main %}
-<hgroup>
-  <h2>{{ page.title }}</h2>
-  <ul class="horizontal">
-    <li>{{ page.date }}</li>
-    <li>{{ page.extra.lang }}</li>
-    {% for link in page.extra.links %}
-    <li><a target="_blank" href="{{ link.href }}" {% if link.rel %} rel="{{ link.rel }}" {% endif %}>{{ link.text }}</a></li>
-    {% endfor %}
-  </ul>
-</hgroup>
+  <hgroup>
+    <h2>{{ page.title }}</h2>
+    <ul class="horizontal">
+      <li>{{ page.date }}</li>
+      <li>{{ page.extra.lang }}</li>
+      {% for link in page.extra.links %}
+        <li>
+          <a target="_blank" href="{{ link.href }}" {% if link.rel %}rel="{{ link.rel }}"{% endif %}
+            >{{ link.text }}</a
+          >
+        </li>
+      {% endfor %}
+    </ul>
+  </hgroup>
 
-{{ page.content | safe }}
+  {{ page.content | safe }}
 {% endblock main %}

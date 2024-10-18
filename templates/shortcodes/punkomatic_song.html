@@ -1,18 +1,18 @@
 <hgroup class="punkomatic-song" id="{{ slug }}">
   <h3><a class="anchor" href="#{{ slug }}" title="link to section">#</a>{{ title }}</h3>
   {% if description %}
-  <p>{{ description | markdown | safe }}</p>
+    <p>{{ description | markdown | safe }}</p>
   {% else %}
-  <ul class="horizontal">
-    {% if author %}<li>Author: {{ author }}</li>{% endif %}
-    {% if genre %}<li>{{ genre }}</li>{% endif %}
-    {% if rating %}<li>Rating: {{ rating }}</li>{% endif %}
-    {% if archive_link %}
-    <li><a href="{{ archive_link }}">{{ stats }}</a></li>
-    {% elif stats %}
-    <li>{{ stats }}</li>
-    {% endif %}
-  </ul>
+    <ul class="horizontal">
+      {% if author %}<li>Author: {{ author }}</li>{% endif %}
+      {% if genre %}<li>{{ genre }}</li>{% endif %}
+      {% if rating %}<li>Rating: {{ rating }}</li>{% endif %}
+      {% if archive_link %}
+        <li><a href="{{ archive_link }}">{{ stats }}</a></li>
+      {% elif stats %}
+        <li>{{ stats }}</li>
+      {% endif %}
+    </ul>
   {% endif %}
   <div class="row">
     <button id="play" title="Play or download" disabled>Play</button>

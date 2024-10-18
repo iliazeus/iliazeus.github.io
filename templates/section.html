@@ -4,29 +4,40 @@
 {% block title %}{{ section.title }} | iliazeus{% endblock title %}
 
 {% block head %}
-{{ super() }}
-<meta name="description" content="{{ section.title }}. {{ section.description | default(value='') | capitalize }}. iliazeus" />
+  {{ super() }}
+  <meta
+    name="description"
+    content="{{ section.title }}. {{ section.description | default(value='') | capitalize }}. iliazeus"
+  />
 {% endblock head %}
 
 {% block main %}
-<hgroup>
-  <h2>{{ section.title }}</h2>
-  <p>{{ section.description | default(value="") }}</p>
-</hgroup>
-
-{{ section.content | safe }}
-
-{% for page in section.pages %}
   <hgroup>
-    <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
-    <p>{{ page.description | default(value="") }}</p>
-    <ul class="horizontal small">
-      <li>{{ page.date }}</li>
-      <li>{{ page.extra.lang }}</li>
-      {% for link in page.extra.links %}
-      <li><a target="_blank" href="{{ link.href }}" {% if link.rel %} rel="{{ link.rel }}" {% endif %}>{{ link.text }}</a></li>
-      {% endfor %}
-    </ul>
+    <h2>{{ section.title }}</h2>
+    <p>{{ section.description | default(value="") }}</p>
   </hgroup>
-{% endfor %}
+
+  {{ section.content | safe }}
+
+  {% for page in section.pages %}
+    <hgroup>
+      <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
+      <p>{{ page.description | default(value="") }}</p>
+      <ul class="horizontal small">
+        <li>{{ page.date }}</li>
+        <li>{{ page.extra.lang }}</li>
+        {% for link in page.extra.links %}
+          <li>
+            <a
+              target="_blank"
+              href="{{ link.href }}"
+              {% if link.rel %}rel="{{ link.rel }}"{% endif %}
+            >
+              {{ link.text }}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </hgroup>
+  {% endfor %}
 {% endblock main %}

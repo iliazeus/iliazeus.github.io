@@ -4,14 +4,17 @@
 {% block title %}{{ page.title }} | Punk-o-Matic 2 song data | iliazeus{% endblock title %}
 
 {% block head %}
-{{ super() }}
-<meta name="description" content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus" />
+  {{ super() }}
+  <meta
+    name="description"
+    content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus"
+  />
 {% endblock head %}
 
 {% block main %}
-<hgroup>
-  <a href="..">Punk-o-Matic 2 song data</a> /
-  <h2>{{ page.title }}</h2>
-</hgroup>
-{{ page.content | safe }}
+  <hgroup>
+    <a href="..">Punk-o-Matic 2 song data</a> /
+    <h2>{{ page.title }}</h2>
+  </hgroup>
+  {{ page.content | safe }}
 {% endblock main %}

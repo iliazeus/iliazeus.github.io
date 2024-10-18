@@ -4,22 +4,25 @@
 {% block title %}{{ section.title }} | iliazeus{% endblock title %}
 
 {% block head %}
-{{ super() }}
-<meta name="description" content="{{ section.title }}. {{ section.description | default(value='') | capitalize }}. iliazeus" />
+  {{ super() }}
+  <meta
+    name="description"
+    content="{{ section.title }}. {{ section.description | default(value='') | capitalize }}. iliazeus"
+  />
 {% endblock head %}
 
 {% block main %}
-<hgroup>
-  <h2>{{ section.title }}</h2>
-  <p>{{ section.description | default(value="") }}</p>
-</hgroup>
-
-{{ section.content | safe }}
-
-{% for page in section.pages %}
   <hgroup>
-    <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
-    <p>{{ page.description | default(value="") }}</p>
+    <h2>{{ section.title }}</h2>
+    <p>{{ section.description | default(value="") }}</p>
   </hgroup>
-{% endfor %}
+
+  {{ section.content | safe }}
+
+  {% for page in section.pages %}
+    <hgroup>
+      <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
+      <p>{{ page.description | default(value="") }}</p>
+    </hgroup>
+  {% endfor %}
 {% endblock main %}

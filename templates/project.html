@@ -5,28 +5,42 @@
 {% block title %}{{ page.title }} | iliazeus{% endblock title %}
 
 {% block head %}
-{{ super() }}
-<meta name="description" content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus" />
+  {{ super() }}
+  <meta
+    name="description"
+    content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus"
+  />
 {% endblock head %}
 
 {% block main %}
-<hgroup>
-  <h2>{{ page.title }}</h2>
-  <p>{{ page.description | safe }}</p>
-  {{ macros::badges(project=page) }}
-  <h3>Links</h3>
-  <ul>
-    {% if page.extra.repository %}
-    <li><a target="_blank" href="{{ page.extra.repository }}">Source code</a></li>
-    {% endif %}
-    {% if page.extra.vs_marketplace %}
-    <li><a target="_blank" href="https://marketplace.visualstudio.com/items?itemName={{ page.extra.vs_marketplace }}">Visual Studio Marketplace</a></li>
-    {% endif %}
-    {% for link in page.extra.links | default(value=[]) %}
-    <li><a target="{{ link.target | default(value='_blank') }}" href="{{ link.href }}">{{ link.title }}</a></li>
-    {% endfor %}
-  </ul>
-</hgroup>
+  <hgroup>
+    <h2>{{ page.title }}</h2>
+    <p>{{ page.description | safe }}</p>
+    {{ macros::badges(project=page) }}
+    <h3>Links</h3>
+    <ul>
+      {% if page.extra.repository %}
+        <li><a target="_blank" href="{{ page.extra.repository }}">Source code</a></li>
+      {% endif %}
+      {% if page.extra.vs_marketplace %}
+        <li>
+          <a
+            target="_blank"
+            href="https://marketplace.visualstudio.com/items?itemName={{ page.extra.vs_marketplace }}"
+          >
+            Visual Studio Marketplace
+          </a>
+        </li>
+      {% endif %}
+      {% for link in page.extra.links | default(value=[]) %}
+        <li>
+          <a target="{{ link.target | default(value='_blank') }}" href="{{ link.href }}">
+            {{ link.title }}
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </hgroup>
 
-{{ page.content | safe }}
+  {{ page.content | safe }}
 {% endblock main %}
