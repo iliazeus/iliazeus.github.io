@@ -1,81 +1,32 @@
+{% extends "base.html" %}
 {% import "macros.html" as macros %}
-<!DOCTYPE html>
-<html lang="{{ page.extra.lang | default(value=page.lang) }}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="description" content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <link rel="alternate" type="application/atom+xml" href="{{ get_url(path="atom.xml", trailing_slash=false) }}">
+{% block lang %}{{ page.extra.lang | default(value=page.lang) }}{% endblock lang %}
+{% block title %}{{ page.title }} | iliazeus{% endblock title %}
 
-    <link
-      rel="preload" as="style"
-      href="https://code.cdn.mozilla.net/fonts/fira.css"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
+{% block head %}
+{{ super() }}
+<meta name="description" content="{{ page.title }}. {{ page.description | capitalize }}. iliazeus" />
+{% endblock head %}
 
-    <style>.if-not-js { display: none !important }</style>
-    <noscript><style>
-      .if-js { display: none !important }
-      .if-not-js { display: unset !important }
-    </style></noscript>
+{% block main %}
+<hgroup>
+  <h2>{{ page.title }}</h2>
+  <p>{{ page.description | safe }}</p>
+  {{ macros::badges(project=page) }}
+  <h3>Links</h3>
+  <ul>
+    {% if page.extra.repository %}
+    <li><a target="_blank" href="{{ page.extra.repository }}">Source code</a></li>
+    {% endif %}
+    {% if page.extra.vs_marketplace %}
+    <li><a target="_blank" href="https://marketplace.visualstudio.com/items?itemName={{ page.extra.vs_marketplace }}">Visual Studio Marketplace</a></li>
+    {% endif %}
+    {% for link in page.extra.links | default(value=[]) %}
+    <li><a target="{{ link.target | default(value='_blank') }}" href="{{ link.href }}">{{ link.title }}</a></li>
+    {% endfor %}
+  </ul>
+</hgroup>
 
-    <script src="/theme.js"></script>
-    <link rel="stylesheet" href="/style.css" />
-
-    <title>{{ page.title }} | iliazeus</title>
-  </head>
-
-  <body>
-    <a href="#" class="local if-js theme-toggle" style="cursor: pointer; position: absolute; right: 8px; top: 8px">toggle dark theme</a>
-
-    <header>
-      <hgroup>
-        <h1><a href="/" title="go to main page">iliazeus</a></h1>
-        <nav>
-          <ul class="horizontal small">
-            <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
-            <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
-            <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
-            <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
-          </ul>
-        </nav>
-        <p>илья, иль не я</p>
-      </hgroup>
-    </header>
-
-    <main>
-      <hgroup>
-        <h2>{{ page.title }}</h2>
-        <p>{{ page.description | safe }}</p>
-        {{ macros::badges(project=page) }}
-        <h3>Links</h3>
-        <ul>
-          {% if page.extra.repository %}
-          <li><a target="_blank" href="{{ page.extra.repository }}">Source code</a></li>
-          {% endif %}
-          {% if page.extra.vs_marketplace %}
-          <li><a target="_blank" href="https://marketplace.visualstudio.com/items?itemName={{ page.extra.vs_marketplace }}">Visual Studio Marketplace</a></li>
-          {% endif %}
-          {% for link in page.extra.links | default(value=[]) %}
-          <li><a target="{{ link.target | default(value='_blank') }}" href="{{ link.href }}">{{ link.title }}</a></li>
-          {% endfor %}
-        </ul>
-      </hgroup>
-
-      {{ page.content | safe }}
-    </main>
-
-    <footer>
-      <nav>
-        <ul class="horizontal small">
-          <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
-          <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
-          <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
-          <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
-          <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
-        </ul>
-      </nav>
-    </footer>
-  </body>
-</html>
+{{ page.content | safe }}
+{% endblock main %}

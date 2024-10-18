@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="{% block lang %}en{% endblock lang %}">
+  <head>
+    {% block head %}
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="google-site-verification" content="T-iT_pGID-1weoNVNPdLheqjrt6tmFKIm302Cm-03Zs" />
+
+    <link
+      rel="alternate"
+      type="application/atom+xml"
+      href="{{ get_url(path='atom.xml', trailing_slash=false) }}"
+    />
+
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <link
+      rel="preload"
+      as="style"
+      href="https://code.cdn.mozilla.net/fonts/fira.css"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+
+    <!-- prettier-ignore -->
+    <style>.if-not-js { display: none !important }</style>
+    <noscript
+      ><style>
+        .if-js {
+          display: none !important;
+        }
+        .if-not-js {
+          display: unset !important;
+        }
+      </style></noscript
+    >
+
+    <script src="/theme.js"></script>
+    <link rel="stylesheet" href="/style.css" />
+
+    <title>{% block title %}iliazeus{% endblock title %}</title>
+    {% endblock head %}
+  </head>
+
+  <body>
+    <a href="#" class="local if-js theme-toggle">toggle dark theme</a>
+
+    <header>
+      <hgroup>
+        <h1><a href="/" title="go to main page">iliazeus</a></h1>
+        <nav>
+          <ul class="horizontal small">
+            <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+            <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+            <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
+            <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
+          </ul>
+        </nav>
+        <p>илья, иль не я</p>
+      </hgroup>
+    </header>
+
+    <main>{% block main %}{% endblock main %}</main>
+
+    <footer>
+      <nav>
+        <ul class="horizontal small">
+          <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+          <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+          <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
+          <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
+          <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

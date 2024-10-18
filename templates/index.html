@@ -1,130 +1,72 @@
+{% extends "base.html" %}
 {% import "macros.html" as macros %}
-<!DOCTYPE html>
-<html lang="{{ section.lang }}">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="description" content="iliazeus - main page" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="google-site-verification" content="T-iT_pGID-1weoNVNPdLheqjrt6tmFKIm302Cm-03Zs" />
 
-    <link rel="alternate" type="application/atom+xml" href="{{ get_url(path="atom.xml", trailing_slash=false) }}">
+{% block head %}
+{{ super() }}
+<meta name="description" content="iliazeus - main page" />
+{% endblock head %}
 
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="manifest" href="/site.webmanifest">
+{% block main %}
+<p>I do TypeScript, Python, Rust, and weird stuff.
+<br />I sometimes write articles, or translate articles written by others.</p>
 
-    <link
-      rel="preload" as="style"
-      href="https://code.cdn.mozilla.net/fonts/fira.css"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-
-    <!-- prettier-ignore -->
-    <style>.if-not-js { display: none !important }</style>
-    <noscript><style>
-      .if-js { display: none !important }
-      .if-not-js { display: unset !important }
-    </style></noscript>
-
-    <script src="/theme.js"></script>
-    <link rel="stylesheet" href="/style.css" />
-
-    <title>iliazeus</title>
-  </head>
-
-  <body>
-    <a href="#" class="local if-js theme-toggle" style="cursor: pointer; position: absolute; right: 8px; top: 8px">toggle dark theme</a>
-
-    <header>
-      <hgroup>
-        <h1><a href="/" title="go to main page">iliazeus</a></h1>
-        <nav>
-          <ul class="horizontal small">
-            <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
-            <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
-            <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
-            <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
-          </ul>
-        </nav>
-        <p>илья, иль не я</p>
-      </hgroup>
-    </header>
-
-    <main>
-      <p>I do TypeScript, Python, Rust, and weird stuff.
-      <br />I sometimes write articles, or translate articles written by others.</p>
-      {% for subsection_path in section.subsections %}
-        {% set subsection = get_section(path=subsection_path) %}
-        {% if subsection.extra.show_on_main | default(value="pages") == "link" %}
-        <hgroup>
-          <h2><a href="{{ subsection.path }}">{{ subsection.title }}</a></h2>
-          <p>{{ subsection.description | default(value="") }}</p>
-        </hgroup>
-        {% elif subsection.extra.show_on_main | default(value="pages") == "projects" %}
-          <hgroup>
-            <h2>{{ subsection.title }}</h2>
-            <p>{{ subsection.description | default(value="") | safe }}</p>
-          </hgroup>
-          <div class="projects">
-            {% set projects = subsection.pages | filter(attribute="extra.featured") | sort(attribute="extra.featured") %}
-            {% for project in projects %}
-              <article class="project">
-                <h3>
-                  {% if project.extra.homepage %}
-                    <a target="_blank" href="{{ project.extra.homepage }}">{{ project.title }}</a>
-                  {% else %}
-                    <a href="{{ project.path | safe }}">{{ project.title }}</a>
-                  {% endif %}
-                </h3>
-                {{ macros::badges(project=project) }}
-                <p>{{ project.description | default(value="") | safe }}</p>
-              </article>
-            {% endfor %}
-          </div>
-        {% else %}
-          <hgroup>
-            <h2>recent {{ subsection.title }} (<a href="{{ subsection.path }}">see&nbsp;all</a>)</h2>
-            <p>{{ subsection.description | default(value="") }}</p>
-          </hgroup>
-          {{ subsection.content | safe }}
-          {% for page in subsection.pages | slice(end=5) %}
-            <hgroup>
-              <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
-              <p>{{ page.description | default(value="") }}</p>
-              <ul class="horizontal small">
-                <li>{{ page.date }}</li>
-                <li>{{ page.extra.lang }}</li>
-                {% for link in page.extra.links %}
-                <li><a target="_blank" href="{{ link.href }}" {% if link.rel %} rel="{{ link.rel }}" {% endif %}>{{ link.text }}</a></li>
-                {% endfor %}
-              </ul>
-            </hgroup>
-          {% endfor %}
-        {% endif %}
+{% for subsection_path in section.subsections %}
+  {% set subsection = get_section(path=subsection_path) %}
+  {% if subsection.extra.show_on_main | default(value="pages") == "link" %}
+  <hgroup>
+    <h2><a href="{{ subsection.path }}">{{ subsection.title }}</a></h2>
+    <p>{{ subsection.description | default(value="") }}</p>
+  </hgroup>
+  {% elif subsection.extra.show_on_main | default(value="pages") == "projects" %}
+    <hgroup>
+      <h2>{{ subsection.title }}</h2>
+      <p>{{ subsection.description | default(value="") | safe }}</p>
+    </hgroup>
+    <div class="projects">
+      {% set projects = subsection.pages | filter(attribute="extra.featured") | sort(attribute="extra.featured") %}
+      {% for project in projects %}
+        <article class="project">
+          <h3>
+            {% if project.extra.homepage %}
+              <a target="_blank" href="{{ project.extra.homepage }}">{{ project.title }}</a>
+            {% else %}
+              <a href="{{ project.path | safe }}">{{ project.title }}</a>
+            {% endif %}
+          </h3>
+          {{ macros::badges(project=project) }}
+          <p>{{ project.description | default(value="") | safe }}</p>
+        </article>
       {% endfor %}
-
+    </div>
+  {% else %}
+    <hgroup>
+      <h2>recent {{ subsection.title }} (<a href="{{ subsection.path }}">see&nbsp;all</a>)</h2>
+      <p>{{ subsection.description | default(value="") }}</p>
+    </hgroup>
+    {{ subsection.content | safe }}
+    {% for page in subsection.pages | slice(end=5) %}
       <hgroup>
-        <h2>links</h2>
-        <ul>
-          <li>github: <a target="_blank" rel="me" href="https://github.com/iliazeus">@iliazeus</a></li>
-          <li>habr: <a target="_blank" rel="me" href="https://habr.com/users/iliazeus">@iliazeus</a></li>
-          <li>mastodon: <a target="_blank" rel="me" href="https://lor.sh/@iliazeus">@iliazeus@lor.sh</a></li>
-          <li>mailto: <a target="_blank" rel="me" href="mailto:iliazeus@proton.me">iliazeus@proton.me</a></li>
+        <h3><a href="{{ page.path }}">{{ page.title }}</a></h3>
+        <p>{{ page.description | default(value="") }}</p>
+        <ul class="horizontal small">
+          <li>{{ page.date }}</li>
+          <li>{{ page.extra.lang }}</li>
+          {% for link in page.extra.links %}
+          <li><a target="_blank" href="{{ link.href }}" {% if link.rel %} rel="{{ link.rel }}" {% endif %}>{{ link.text }}</a></li>
+          {% endfor %}
         </ul>
       </hgroup>
-    </main>
+    {% endfor %}
+  {% endif %}
+{% endfor %}
 
-    <footer>
-      <nav>
-        <ul class="horizontal small">
-          <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
-          <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
-          <li><a target="_blank" rel="me" href="https://lor.sh/@iliazeus">mastodon</a></li>
-          <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">mailto</a></li>
-          <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
-        </ul>
-      </nav>
-    </footer>
-  </body>
-</html>
+<hgroup>
+  <h2>links</h2>
+  <ul>
+    <li>github: <a target="_blank" rel="me" href="https://github.com/iliazeus">@iliazeus</a></li>
+    <li>habr: <a target="_blank" rel="me" href="https://habr.com/users/iliazeus">@iliazeus</a></li>
+    <li>mastodon: <a target="_blank" rel="me" href="https://lor.sh/@iliazeus">@iliazeus@lor.sh</a></li>
+    <li>mailto: <a target="_blank" rel="me" href="mailto:iliazeus@proton.me">iliazeus@proton.me</a></li>
+  </ul>
+</hgroup>
+{% endblock main %}
