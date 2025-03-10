@@ -1,25 +1,51 @@
-const rootDataArg = document.documentElement.dataset.theme;
-const stored = window.sessionStorage.getItem("theme");
-const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+const prefersLight = window.matchMedia("(prefers-color-scheme: light)");
+const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 
-let theme = "light";
-if (stored) theme = stored;
-else if (prefersLight) theme = "light";
-else if (prefersDark) theme = "dark";
-else if (rootDataArg) theme = rootDataArg;
+function getPreferredTheme() {
+  if (prefersLight.matches) return "light";
+  if (prefersDark.matches) return "dark";
+  return null;
+}
 
-document.documentElement.dataset.theme = theme;
+function getStoredTheme() {
+  return window.localStorage.getItem("theme");
+}
 
-var toggleTheme = () => {
-  const current = document.documentElement.dataset.theme;
-  const next = current === "light" ? "dark" : "light";
-  document.documentElement.dataset.theme = next;
-  window.sessionStorage.setItem("theme", next);
-};
+function getCurrentTheme() {
+  return document.documentElement.dataset.theme ?? getPreferredTheme() ?? "light";
+}
 
-window.addEventListener("load", (e) => {
-  e.preventDefault();
+function setTheme(theme) {
+  if (theme == getPreferredTheme()) {
+    delete document.documentElement.dataset.theme;
+    window.localStorage.removeItem("theme");
+  } else {
+    document.documentElement.dataset.theme = theme;
+    window.localStorage.setItem("theme", theme);
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = getCurrentTheme();
+  const nextTheme = currentTheme == "light" ? "dark" : "light";
+  setTheme(nextTheme);
+}
+
+function updatePreferredTheme() {
+  const current = getCurrentTheme();
+  if (current == getPreferredTheme()) {
+    window.localStorage.removeItem("theme");
+  } else {
+    window.localStorage.setItem("theme", current);
+  }
+}
+
+setTheme(getStoredTheme() ?? getPreferredTheme() ?? "light");
+
+prefersLight.addEventListener("change", updatePreferredTheme);
+prefersDark.addEventListener("change", updatePreferredTheme);
+
+window.addEventListener("DOMContentLoaded", () => {
   document
     .querySelectorAll(".theme-toggle")
     .forEach((el) => el.addEventListener("click", toggleTheme));
