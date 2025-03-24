@@ -7,10 +7,11 @@
 {% endblock head %}
 
 {% block main %}
-  <p>
-    I do TypeScript, Python, Rust, and weird stuff. <br />I sometimes write articles, or translate
-    articles written by others.
-  </p>
+  <div id="bio" style="overflow: hidden">
+    <p>Hi! My name is Ilia (he/him).</p>
+    <p>I write C and C++ (at work), TypeScript, Python, Rust, and blog posts (rarely).</p>
+    <p>Avatar made with <a target="_blank" href="https://picrew.me/en/image_maker/644129">a generator by Makowka</a>.</p>
+  </div>
 
   {% for subsection_path in section.subsections %}
     {% set subsection = get_section(path=subsection_path) %}

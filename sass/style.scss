@@ -71,11 +71,14 @@ body > * {
   margin: 0 auto;
 }
 
-header h1 {
-  a,
-  a:visited {
-    color: inherit;
-  }
+header {
+  overflow: hidden;
+}
+
+header img {
+  margin: 0.5em;
+  border: 1px solid;
+  border-radius: $border-radius;
 }
 
 footer {
@@ -90,6 +93,14 @@ footer {
 }
 
 main {
+  #bio {
+    margin-left: 0.5em;
+    p {
+      margin-top: 0.05em;
+      margin-bottom: 0.05em;
+    }
+  }
+
   a.anchor {
     color: inherit;
     font-weight: normal;
