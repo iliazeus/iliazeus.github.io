@@ -74,6 +74,13 @@
           <li><a target="_blank" rel="me" href="https://gts.iliazeus.lol/@iliazeus">fediverse</a></li>
           <li><a target="_blank" rel="me" href="mailto:iliazeus@proton.me">email</a></li>
           <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
+          {% if section.extra.updated %}
+          <li>last updated on {{ section.extra.updated }}</li>
+          {% elif page.updated %}
+          <li>last updated on {{ page.updated }}</li>
+          {% elif page.date %}
+          <li>last updated on {{ page.date }}</li>
+          {% endif %}
         </ul>
       </nav>
     </footer>
