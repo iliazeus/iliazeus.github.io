@@ -1,5 +1,5 @@
 ---
-title: Как я заставил работать Netflix на Asahi Linux
+title: (Перевод) Как я заставил работать Netflix на Asahi Linux
 date: 2023-03-10
 description: трудности с Widevine на Linux на Apple Silicon
 

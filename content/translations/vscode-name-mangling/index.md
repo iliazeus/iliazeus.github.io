@@ -1,5 +1,5 @@
 ---
-title: Как уменьшали размер VS Code, используя name mangling
+title: (Перевод) Как уменьшали размер VS Code, используя name mangling
 date: 2023-08-22
 description: сокращение идентификаторов во время сборки
 

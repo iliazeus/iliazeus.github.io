@@ -1,5 +1,5 @@
 ---
-title: Как я заставил GTA Online загружаться на 70% быстрее
+title: (Перевод) Как я заставил GTA Online загружаться на 70% быстрее
 date: 2021-03-01
 description: R* please fix
 
