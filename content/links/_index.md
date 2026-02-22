@@ -6,20 +6,21 @@ weight: 5
 render: true
 extra:
   show_on_main: link
-  updated: 2025-12-21
+  updated: 2026-02-22
 ---
 
 These are sorted roughly by when I first visited them.
 
 <small>TODO: make this into an OPML list?</small>
 
-### December 2025
+- [samir : coffee → nonsense](https://functional.computer/) ([atom]) ([rss]) - website of Samir Talwar, mostly about functional programming, and software in general.
 
-- [Nikhil's blog](https://nikhilism.com/) ([rss]) - tech and programming
+  [rss]: https://functional.computer/rss.xml
+  [atom]: https://functional.computer/atom.xml
+
+- [Nikhil's blog](https://nikhilism.com/) ([rss]) - tech and programming.
 
   [rss]: https://nikhilism.com/index.xml
-
-### earlier
 
 - [Dr. Lex' Site](https://www.dr-lex.be/) - lots of cool things, including [3D printing models] and a run of [Garfield-sans-Garfield] webcomic.
 
