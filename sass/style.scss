@@ -29,30 +29,30 @@ $border-radius: 5px;
 }
 
 :root[data-theme="light"] {
-  @import "../static/syntax-light";
+  @import "../static/giallo-light";
   @include theme-light;
 }
 
 :root[data-theme="dark"] {
-  @import "../static/syntax-dark";
+  @import "../static/giallo-dark";
   @include theme-dark;
 }
 
 :root:not([data-theme]) {
-  @import "../static/syntax-light";
+  @import "../static/giallo-light";
   @include theme-light;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme]) {
-    @import "../static/syntax-light";
+    @import "../static/giallo-light";
     @include theme-light;
   }
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme]) {
-    @import "../static/syntax-dark";
+    @import "../static/giallo-dark";
     @include theme-dark;
   }
 }

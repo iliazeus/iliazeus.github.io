@@ -7,12 +7,10 @@ generate_feeds = true
 [markdown]
 external_links_target_blank = true
 
-highlight_code = true
-highlight_theme = "css"
-highlight_themes_css = [
-  { theme = "dimmed-fluid", filename = "syntax-light.css" },
-  { theme = "monokai", filename = "syntax-dark.css" },
-]
+[markdown.highlighting]
+style = "class"
+light_theme = "light-plus"
+dark_theme = "red"
 
 [extra]
 # Put all your custom variables here
