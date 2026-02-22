@@ -7,6 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3.0.0
-      - uses: shalzz/zola-deploy-action@v0.19.2
+      - uses: shalzz/zola-deploy-action@v0.22.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
