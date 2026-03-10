@@ -153,32 +153,13 @@ a[href="#"] {
   text-decoration: 2px underline dotted;
 }
 
-.projects {
-  display: flex;
-  flex-flow: row wrap;
-  align-items: start;
+.projects > article {
+  margin-top: 8px;
+  margin-bottom: 8px;
 
-  > article {
-    display: inline-block;
-    box-sizing: border-box;
-
-    width: 100%;
-    margin: 8px 0;
-    @media (min-width: 720px) {
-      width: 45%;
-      padding: 8px 12px;
-      margin: 8px;
-      border: solid 1px;
-      border-radius: $border-radius;
-    }
-    @media (min-width: 1024px) {
-      width: 30%;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-    }
+  > * {
+    margin-top: 0;
+    margin-bottom: 0;
   }
 }
 
@@ -207,9 +188,6 @@ ul.horizontal {
 ul.badges {
   padding: 0;
   padding-top: 2px;
-  @media (min-width: 720px) {
-    min-height: 52px;
-  }
   li {
     display: inline;
     white-space: nowrap;
