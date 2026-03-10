@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    
+  
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="google-site-verification" content="T-iT_pGID-1weoNVNPdLheqjrt6tmFKIm302Cm-03Zs" />
+      <meta name="fediverse:creator" content="@iliazeus@gts.iliazeus.lol">
+
+      <link
+        rel="alternate"
+        type="application/atom+xml"
+        href="https://iliazeus.lol/atom.xml"
+      />
+
+      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+      <link rel="manifest" href="/site.webmanifest" />
+
+      <link
+        rel="preload"
+        as="style"
+        href="https://code.cdn.mozilla.net/fonts/fira.css"
+        onload="this.onload=null;this.rel='stylesheet'"
+      />
+
+      <!-- prettier-ignore -->
+      <style>.if-not-js { display: none !important }</style>
+      <noscript
+        ><style>
+          .if-js {
+            display: none !important;
+          }
+          .if-not-js {
+            display: unset !important;
+          }
+        </style></noscript
+      >
+
+      <script src="/theme.js"></script>
+      <link rel="stylesheet" href="/style.css" />
+
+      <title>(Перевод) Как я заставил GTA Online загружаться на 70% быстрее | iliazeus</title>
+    
+  <meta
+    name="description"
+    content="(Перевод) Как я заставил GTA Online загружаться на 70% быстрее. R* please fix. iliazeus"
+  />
+
+  </head>
+
+  <body>
+    <a href="#" class="local if-js theme-toggle">toggle dark theme</a>
+
+    <header>
+      <a href="/" title="go to main page" style="color: inherit !important"><img src="/avatar.png" style="height: 100px; float: left"></a>
+      <hgroup>
+        <h1><a href="/" style="color: inherit !important" title="go to main page">iliazeus</a></h1>
+        <nav>
+          <ul class="horizontal small">
+            <li><a target="_blank" rel="me" href="https://gts.iliazeus.lol/@iliazeus">fediverse</a></li>
+            <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+            <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+            <li><a target="_blank" rel="me" href="email:iliazeus@proton.me">email</a></li>
+          </ul>
+        </nav>
+        <p>илья, иль не я</p>
+      </hgroup>
+    </header>
+
+    <main>
+  <hgroup>
+    <h2>(Перевод) Как я заставил GTA Online загружаться на 70% быстрее</h2>
+    <ul class="horizontal">
+      <li>2021-03-01</li>
+      <li>ru</li>
+      
+        <li>
+          <a target="_blank" href="https:&#x2F;&#x2F;nee.lv&#x2F;2021&#x2F;02&#x2F;28&#x2F;How-I-cut-GTA-Online-loading-times-by-70&#x2F;" rel="author"
+            >by t0st</a
+          >
+        </li>
+      
+    </ul>
+  </hgroup>
+
+  <p>GTA Online печально известна своими чудовищно медленными загрузками. Решив снова поиграть в нее ради пары новых миссий, я обнаружил <em>(вот сюрприз!)</em>, что все настолько же плохо, как и семь лет назад, в день ее релиза.</p>
+<p>Но теперь пришло время разобраться с этим раз и навсегда.</p>
+<h3 id="razvedka">Разведка</h3>
+<p>Для начала я отправился на поиски готового решения проблемы. Большую часть результатов поиска составили истории о том, <a rel="noopener external" target="_blank" href="https://metro.co.uk/2017/11/01/why-does-gta-v-take-so-long-to-load-7041927/">насколько сложна игра</a>, <a rel="noopener external" target="_blank" href="https://steamcommunity.com/app/271590/discussions/0/217690940938819317/">насколько плоха сетевая p2p-архитектура</a> (что, в общем-то, правда), <a rel="noopener external" target="_blank" href="https://gtaforums.com/topic/908000-fastest-way-to-load-into-gtao-single-player-first-or-straight-in/">хаки с загрузкой из одиночного режима</a>, а также парочка модов, отключающих вступительные заставки. По моим скромным подсчетам, все это должно было сократить аж целых 10-30 секунд!</p>
+<h3 id="benchmarki">Бенчмарки</h3>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>Story mode load time:  ~1m 10s</span></span>
+<span class="giallo-l"><span>Online mode load time: ~6m flat</span></span>
+<span class="giallo-l"><span>Startup menu disabled, time from R* logo until in-game (social club login time isn&#39;t counted).</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>Old but decent CPU:   AMD FX-8350</span></span>
+<span class="giallo-l"><span>Cheap-o SSD:          KINGSTON SA400S37120G</span></span>
+<span class="giallo-l"><span>We have to have RAM:  2x Kingston 8192 MB (DDR3-1337) 99U5471</span></span>
+<span class="giallo-l"><span>Good-ish GPU:         NVIDIA GeForce GTX 1070</span></span></code></pre>
+<p>Я понимаю, что мое железо не самое новое, но что такого в сетевом режиме может загружаться в шесть раз дольше одиночного? К слову, загружаться из одиночного режима мне не помогло (<a rel="noopener external" target="_blank" href="https://www.reddit.com/r/gtaonline/comments/kycy7a/gtao_loading_times_using_different_methods/">и не только мне</a>). По крайней мере, значимых результатов я не заметил.</p>
+<h3 id="ia-takoi-ne-odin">Я такой (не) один</h3>
+<p>Если верить <a rel="noopener external" target="_blank" href="https://www.reddit.com/r/gtaonline/comments/ht4i56/your_average_online_loading_time/">этому опросу</a>, такие проблемы раздражают более 80% аудитории игры. И так уже семь лет, Rockstar!</p>
+<figure class="border">
+<img src="survey.png" />
+</figure>
+<p>Покопавшись в интернете в поисках тех 20% счастливчиков, загружающихся за 3 минуты или меньше, я <a rel="noopener external" target="_blank" href="https://www.youtube.com/watch?v=pJzr3qfyCyg">обнаружил</a> <a rel="noopener external" target="_blank" href="https://www.youtube.com/watch?v=RK7BUFx_NGk">бенчмарки</a>, в которых топовые ПК грузят игру за 2-с-гаком минуты. Я бы сделал что угодно <em>(с игрой)</em> ради таких быстрых загрузок! И все-таки, хотя время и зависит от железа, что-то с ним неладно...</p>
+<p>Почему загрузка одиночного режима даже на топовых ПК занимает все еще около минуты? Более того, примерно столько же нужно, чтобы загрузиться из одиночного режима в сетевой. Я знаю, что мой компьютер не самый быстрый, но не в пять же раз.</p>
+<h3 id="vysokotochnye-izmereniia">Высокоточные измерения</h3>
+<p>И так, заручившись поддержкой несравненного <em>Диспетчера Задач</em>, я начал свое расследование.</p>
+<figure class="border">
+<img src="task-manager.png" />
+</figure>
+<p>Общие для одиночной и сетевой игры ресурсы загрузились примерно за минуту, что сходится с результатами на топовых ПК. Но после этого GTA вдруг решила четыре минуты погреть ровно одно ядро моего процессора.</p>
+<p>Дисковая активность? Ноль! Сетевая активность? Небольшая, и сходит на нет через несколько секунд, если не считать периодической подгрузки рекламных баннеров. Использования GPU? Ноль. Оперативной памяти? Не меняется...</p>
+<p>Что там, черт возми, происходит? Майнинг крипты? Я чую запах говнокода.</p>
+<h3 id="odnopotochnost">Однопоточность</h3>
+<p>Мой восьмиядерный процессор от AMD все еще неплох по современным меркам, но он уже довольно стар. Из тех времен, когда их однопоточная производительность <a rel="noopener external" target="_blank" href="https://valid.x86.fr/bench/6u7sdy/1">сильно отставала</a> от Intel. Это, на самом деле, могло объяснить такую разницу во времени загрузки.</p>
+<p>Но подозрительно то, что игра использует <em>только</em> ЦП. Не диск для подгрузки ресурсов. Не сеть для установки p2p-соединения. Очень похоже, что я нашел какой-то баг.</p>
+<h3 id="profilirovanie">Профилирование</h3>
+<p>Легче всего искать горячие участки кода, вооружившись профилировщиком. Проблема, конечно, в том, что большинство из них действует путем модификации исходного кода программы, внедряясь в нее до сборки, ради повышения точности измерений. А исходного кода у меня нет. С другой стороны, <em>точные</em> измерения мне и не нужны — в моем случае, горячий код выполняется минутами.</p>
+<p>Очевидный выход в таких условиях — сэмплирующий профилировщик. Такие инструменты делают периодические дампы стека во время работы программы, чтобы по ним получить статистику времени выполнения кода. Я знаю только один такой профилировщик (хотя, может, есть и другие), который работает под Windows. Хоть он и не обновлялся уже больше десяти лет, <a rel="noopener external" target="_blank" href="http://lukestackwalker.sourceforge.net/">Luke Stackwalker</a> все еще заслуживает слова моей благодарности.</p>
+<figure class="border">
+<img src="luke-stackwalker.png" />
+</figure>
+<p>Как правило, Luke сгруппировал бы вызовы одной и той же функции в одну запись. Но у меня нет отладочных символов для GTA Online, поэтому я попытался посмотреть сам на те адреса, что рядом. И что же я увидел? Не одно узкое место, а целых два!</p>
+<h3 id="krolich-ia-nora">Кроличья нора</h3>
+<p><em>Одолжив у приятеля</em> его полностью легальную копию <em>всем известного дизассемблера</em> (надо таки учиться использовать <a rel="noopener external" target="_blank" href="https://ghidra-sre.org/">ghidra</a>), я принялся разбирать GTA на части.</p>
+<figure class="border">
+<img src="disassembly-1.png" />
+</figure>
+<p>Хм, что-то не то. Похоже, что код обфусцирован, как и у многих других AAA-видеоигр. Что ж, нам всего лишь нужно достать интересный нам код напрямую из памяти запущенной игры. Рано или поздно ей придется их расшифровать для исполнения. Откопав в своих закромах <a rel="noopener external" target="_blank" href="https://github.com/glmcdona/Process-Dump">Process Dump</a>, я обнаружил кое-что интересное.</p>
+<h3 id="problema-raz-strlen">Проблема раз: ...<code>strlen</code>?!</h3>
+<p>Для одного из "горячих" адресов дизассемблер вытянул откуда-то имя! И это… <code>strlen</code>? Выше по стеку можно найти <code>vscan_fn</code>, а ее, я почти уверен, вызывает <a rel="noopener external" target="_blank" href="https://github.com/chakra-core/ChakraCore/blob/master/pal/src/safecrt/sscanf.c#L47"><code>sscanf</code></a>.</p>
+<figure class="border">
+<img src="disassembly-2.png" />
+</figure>
+<p>Похоже, игра что-то парсит. Но что? Распутывая вывод дизассемблера, можно потратить вечность, поэтому я просто сделал пару дампов с помощью <code>x64dbg</code>. И оказалось, что парсится… JSON! Да, самый обычный JSON. Если быть точнее, <em>10 мегабайт</em> JSON-массива с 63 тысячами элементов.</p>
+<pre class="giallo z-code"><code data-lang="json"><span class="giallo-l"><span class="z-source">...,</span></span>
+<span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">key</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">WP_WCT_TINT_21_t2_v9_n2</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">price</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-constant z-numeric"> 45000</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">statName</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">CHAR_KIT_FM_PURCHASE20</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">storageType</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">BITFIELD</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">bitShift</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-constant z-numeric"> 7</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">bitSize</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-constant z-numeric"> 1</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-punctuation">    &quot;</span><span class="z-support z-type z-property-name z-json">category</span><span class="z-punctuation">&quot;</span><span class="z-punctuation">:</span><span class="z-punctuation"> [</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-string">CATEGORY_WEAPON_MOD</span><span class="z-punctuation z-definition z-string">&quot;</span><span class="z-punctuation">]</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span><span class="z-source">,</span></span>
+<span class="giallo-l"><span class="z-source">...</span></span></code></pre>
+<p>Предполагаю, это список всех вещей и апгрейдов, доступных к покупки в GTA Online за внутриигровую валюту.</p>
+<p>Тем не менее, скажете вы, 10 мегабайт — не так уж и много. И <code>sscanf</code> — конечно, не лучший выбор, но не может же все быть настолько плохо? Что ж...</p>
+<figure class="border">
+<img src="flowchart.png" />
+</figure>
+<p>Мда, не самый оптимальный алгоритм. Честно говоря, я и сам не знал, что большинство реализаций <code>sscanf</code> вызывают внутри себя <code>strlen</code>, поэтому не виню того, кто написал этот код. Я думал, что <code>sscanf</code> просто читает строку побайтово, пока не наткнется на <code>'\0'</code>.</p>
+<h3 id="problema-dva-khesh-spiski">Проблема два: хэш-… списки?</h3>
+<p>Оказалось, что следующий виновник вызывается совсем рядом. В декомпилированном исходнике ниже они в одном и том же блоке <code>if</code>.</p>
+<figure class="border">
+<img src="disassembly-3.png" />
+</figure>
+<p>Все имена переменных моего авторства. Не имею понятия, как они называются на самом деле.</p>
+<p>Вторая проблема в том, что каждый считанный объект хранится в довольно странной структуре. Каждый ее элемент выглядит примерно так, как описано ниже. Возможно, это то, во что компилируется связный список из C++? Я не знаю точно.</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">struct</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    uint64_t</span><span class="z-source">  hash</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-support z-type">    item_t</span><span class="z-keyword z-operator">   *</span><span class="z-source">item</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span><span class="z-source"> entry</span><span class="z-punctuation">;</span></span></code></pre>
+<p>Но прежде чем сохранить очередной объект, игра проверят все уже имеющиеся в списке на предмет совпадения хэша. С 63 тысячами элементов, это требует порядка <code>(n^2+n)/2 = (63000^2+63000)/2 = 1984531500</code> сравнений. И большая их часть абсолютна бесполезна. У вас есть <em>хэши</em>, почему бы не использовать <em>хэш</em>-таблицу?</p>
+<figure class="border">
+<img src="disassembly-4.png" />
+</figure>
+<p>В декомпилированных исходниках я назвал это <code>hashmap</code>, хотя стоило бы назвать <code>clearly_not_a_hashmap</code>. Но на самом деле, все еще веселее. Перед загрузкой JSON, эта структура пуста. А в самом JSON все объекты уникальны! Проверки хэшей попросту <em>не нужны</em>! У них даже есть отдельная функция для добавления элемента без проверок! WTF?!</p>
+<h3 id="proof-of-concept">Proof-of-concept</h3>
+<p>Это все, конечно, весело, но для максимально кликбейтного заголовка мне нужно было написать фикс.</p>
+<p>План был такой: написать <code>.dll</code>, инжектнуть ее в GTA, установить <a rel="noopener external" target="_blank" href="https://github.com/TsudaKageyu/minhook">хуки</a>, ???, profit.</p>
+<p>Проблема с JSON довольно неприятна. Я не мог заменить парсер без огромных усилий. Более реалистичный вариант — подменить <code>sscanf</code> на что-то, что не использует <code>strlen</code>. Но я поступил еще проще: поставил хук на <code>strlen</code>, и кешировал его результаты для достаточно длинных строк. Выглядит это примерно так:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">size_t</span><span class="z-entity z-name z-function"> strlen_cacher</span><span class="z-punctuation">(</span><span class="z-storage z-type">char</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> str</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-storage z-modifier">  static</span><span class="z-storage z-type"> char</span><span class="z-keyword z-operator">*</span><span class="z-source"> start</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-storage z-modifier">  static</span><span class="z-storage z-type"> char</span><span class="z-keyword z-operator">*</span><span class="z-source"> end</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  size_t</span><span class="z-source"> len</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-storage z-modifier">  const</span><span class="z-storage z-type"> size_t</span><span class="z-source"> cap </span><span class="z-keyword z-operator">=</span><span class="z-constant z-numeric"> 20000</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> если у нас в &quot;кэше&quot; есть строка, и текущий указатель где-то внутри нее</span></span>
+<span class="giallo-l"><span class="z-keyword">  if</span><span class="z-punctuation"> (</span><span class="z-source">start </span><span class="z-keyword z-operator">&amp;&amp;</span><span class="z-source"> str </span><span class="z-keyword z-operator">&gt;=</span><span class="z-source"> start </span><span class="z-keyword z-operator">&amp;&amp;</span><span class="z-source"> str </span><span class="z-keyword z-operator">&lt;=</span><span class="z-source"> end</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> посчитать новую длину</span></span>
+<span class="giallo-l"><span class="z-source">    len </span><span class="z-keyword z-operator">=</span><span class="z-source"> end </span><span class="z-keyword z-operator">-</span><span class="z-source"> str</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> если мы рядом с концом строки, отключить хук</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">    //</span><span class="z-comment"> чтобы не напортачить ненароком</span></span>
+<span class="giallo-l"><span class="z-keyword">    if</span><span class="z-punctuation"> (</span><span class="z-source">len </span><span class="z-keyword z-operator">&lt;</span><span class="z-source"> cap </span><span class="z-keyword z-operator">/</span><span class="z-constant z-numeric"> 2</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">      MH_DisableHook</span><span class="z-punctuation">(</span><span class="z-punctuation">(</span><span class="z-source">LPVOID</span><span class="z-punctuation">)</span><span class="z-source">strlen_addr</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-source"> len</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> вызвать настоящий strlen</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> мы должны сделать это хотя бы раз для нашего огромного JSON</span></span>
+<span class="giallo-l"><span class="z-source">  len </span><span class="z-keyword z-operator">=</span><span class="z-entity z-name z-function"> builtin_strlen</span><span class="z-punctuation">(</span><span class="z-source">str</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> если строка была достаточно длинной</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> сохранить указатели на начало и конец</span></span>
+<span class="giallo-l"><span class="z-keyword">  if</span><span class="z-punctuation"> (</span><span class="z-source">len </span><span class="z-keyword z-operator">&gt;</span><span class="z-source"> cap</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-source">    start </span><span class="z-keyword z-operator">=</span><span class="z-source"> str</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    end </span><span class="z-keyword z-operator">=</span><span class="z-source"> str </span><span class="z-keyword z-operator">+</span><span class="z-source"> len</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">  return</span><span class="z-source"> len</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>С "хэш-списком" все проще: все элементы уникальны, поэтому просто будем добавлять их без всяких проверок.</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">char</span><span class="z-storage z-type"> __fastcall</span><span class="z-entity z-name z-function"> netcat_insert_dedupe_hooked</span><span class="z-punctuation">(</span><span class="z-storage z-type">uint64_t</span><span class="z-variable z-parameter"> catalog</span><span class="z-punctuation">,</span><span class="z-storage z-type"> uint64_t</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> key</span><span class="z-punctuation">,</span><span class="z-storage z-type"> uint64_t</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> item</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> я забил на то, чтобы реверсить всю структуру</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  uint64_t</span><span class="z-source"> not_a_hashmap </span><span class="z-keyword z-operator">=</span><span class="z-source"> catalog </span><span class="z-keyword z-operator">+</span><span class="z-constant z-numeric"> 88</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> хз, что это, но это было в оригинале</span></span>
+<span class="giallo-l"><span class="z-keyword">  if</span><span class="z-punctuation"> (</span><span class="z-keyword z-operator">!</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">(</span><span class="z-storage z-type">uint8_t</span><span class="z-punctuation">(</span><span class="z-source">__fastcall</span><span class="z-keyword z-operator">*</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-storage z-type">uint64_t</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">*</span><span class="z-source">item </span><span class="z-keyword z-operator">+</span><span class="z-constant z-numeric"> 48</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-source">item</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-keyword">    return</span><span class="z-constant z-numeric"> 0</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> вставить без проверок</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">  netcat_insert_direct</span><span class="z-punctuation">(</span><span class="z-source">not_a_hashmap</span><span class="z-punctuation">,</span><span class="z-source"> key</span><span class="z-punctuation">,</span><span class="z-keyword z-operator"> &amp;</span><span class="z-source">item</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> после добавления последнего элемента</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> отключить хук и выгрузить .dll</span></span>
+<span class="giallo-l"><span class="z-keyword">  if</span><span class="z-punctuation"> (</span><span class="z-keyword z-operator">*</span><span class="z-source">key </span><span class="z-keyword z-operator">==</span><span class="z-keyword"> 0x</span><span class="z-constant z-numeric">7FFFD6BE</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    MH_DisableHook</span><span class="z-punctuation">(</span><span class="z-punctuation">(</span><span class="z-source">LPVOID</span><span class="z-punctuation">)</span><span class="z-source">netcat_insert_dedupe_addr</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    unload</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">  return</span><span class="z-constant z-numeric"> 1</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p><a rel="noopener external" target="_blank" href="https://github.com/tostercx/GTAO_Booster_PoC">Полный исходный код здесь.</a></p>
+<h3 id="rezul-taty">Результаты</h3>
+<p>Сработало ли?</p>
+<pre class="giallo z-code"><code data-lang="plain"><span class="giallo-l"><span>Original online mode load time:        ~6m flat</span></span>
+<span class="giallo-l"><span>Time with only duplication check patch: 4m 30s</span></span>
+<span class="giallo-l"><span>Time with only JSON parser patch:       2m 50s</span></span>
+<span class="giallo-l"><span>Time with both issues patched:          1m 50s</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span>(6*60 - (1*60+50)) / (6*60) = 69.4% load time improvement (nice!)</span></span></code></pre>
+<p>Да, черт возьми!</p>
+<p>Этот фикс почти наверняка не исправит всех проблем с загрузкой. На других системах узкие места могут быть другими. Но найденные мной вещи были настолько очевидны, что я не знаю, почему Rockstar их до сих пор не пофиксили.</p>
+<h3 id="tl-dr">TL;DR</h3>
+<ul>
+<li>При загрузки GTA Online есть однопоточный CPU-боттлнек</li>
+<li>Оказалось, что GTA долго и медленно читает 10 МБ JSON-текста</li>
+<li>Парсер JSON не самый лучший или слишком наивный</li>
+<li>После парсинга есть медленная и ненужная процедура дедупликации</li>
+</ul>
+<h3 id="r-please-fix">R* please fix</h3>
+<p>Если это читает кто-то из Rockstar: эти проблемы не должно быть так сложно пофиксить. Пожалуйста, сделайте что-нибудь.</p>
+<p>Для дедупликации можно использовать хэш-таблицу, или же полностью от нее отказаться. Парсер JSON можно просто заменить на более быстрый. Это не выглядит сложным.</p>
+<p>заранее спасибки &lt;3</p>
+
+</main>
+
+    <footer>
+      <nav>
+        <ul class="horizontal small">
+          <li><a target="_blank" rel="me" href="https://gts.iliazeus.lol/@iliazeus">fediverse</a></li>
+          <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+          <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+          <li><a target="_blank" rel="me" href="email:iliazeus@proton.me">email</a></li>
+          <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
+          
+          <li>last updated on 2021-03-01</li>
+          
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>

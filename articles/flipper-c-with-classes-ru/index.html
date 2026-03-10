@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    
+  
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <meta name="google-site-verification" content="T-iT_pGID-1weoNVNPdLheqjrt6tmFKIm302Cm-03Zs" />
+      <meta name="fediverse:creator" content="@iliazeus@gts.iliazeus.lol">
+
+      <link
+        rel="alternate"
+        type="application/atom+xml"
+        href="https://iliazeus.lol/atom.xml"
+      />
+
+      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+      <link rel="manifest" href="/site.webmanifest" />
+
+      <link
+        rel="preload"
+        as="style"
+        href="https://code.cdn.mozilla.net/fonts/fira.css"
+        onload="this.onload=null;this.rel='stylesheet'"
+      />
+
+      <!-- prettier-ignore -->
+      <style>.if-not-js { display: none !important }</style>
+      <noscript
+        ><style>
+          .if-js {
+            display: none !important;
+          }
+          .if-not-js {
+            display: unset !important;
+          }
+        </style></noscript
+      >
+
+      <script src="/theme.js"></script>
+      <link rel="stylesheet" href="/style.css" />
+
+      <title>Как я писал под Флиппер на Си-с-классами | iliazeus</title>
+    
+  <meta
+    name="description"
+    content="Как я писал под Флиппер на Си-с-классами. Добавляем raii и другие ништяки. iliazeus"
+  />
+
+  </head>
+
+  <body>
+    <a href="#" class="local if-js theme-toggle">toggle dark theme</a>
+
+    <header>
+      <a href="/" title="go to main page" style="color: inherit !important"><img src="/avatar.png" style="height: 100px; float: left"></a>
+      <hgroup>
+        <h1><a href="/" style="color: inherit !important" title="go to main page">iliazeus</a></h1>
+        <nav>
+          <ul class="horizontal small">
+            <li><a target="_blank" rel="me" href="https://gts.iliazeus.lol/@iliazeus">fediverse</a></li>
+            <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+            <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+            <li><a target="_blank" rel="me" href="email:iliazeus@proton.me">email</a></li>
+          </ul>
+        </nav>
+        <p>илья, иль не я</p>
+      </hgroup>
+    </header>
+
+    <main>
+  <hgroup>
+    <h2>Как я писал под Флиппер на Си-с-классами</h2>
+    <ul class="horizontal">
+      <li>2023-10-19</li>
+      <li>ru</li>
+      
+        <li>
+          <a target="_blank" href="https:&#x2F;&#x2F;creativecommons.org&#x2F;licenses&#x2F;by-sa&#x2F;4.0&#x2F;" rel="license"
+            >CC BY-SA 4.0</a
+          >
+        </li>
+      
+        <li>
+          <a target="_blank" href="https:&#x2F;&#x2F;habr.com&#x2F;ru&#x2F;articles&#x2F;768658&#x2F;" rel="alternate"
+            >habr</a
+          >
+        </li>
+      
+    </ul>
+  </hgroup>
+
+  <p>Мой <a rel="noopener external" target="_blank" href="https://flipperzero.one/">Флиппер</a> дошел до меня больше полугода назад, но что-то под него написать я собрался только сейчас. Его API рассчитаны на язык С — а у меня с ним опыта не очень много. Но проблем с тулингом не возникло — у Флиппера есть своя <a rel="noopener external" target="_blank" href="https://github.com/flipperdevices/flipperzero-firmware/blob/dev/documentation/fbt.md">система сборки</a>, которая скачала мне нужный тулчейн и сгенерировала настройки для IDE.</p>
+<p>А для написания кода я решил использовать все же не C, а C++ — точнее, даже "Си-с-классами". На мой взгляд, затуманенный языками более высокого уровня, такой подход получился удобнее, чем писать на чистом C. Результат можно увидеть <a rel="noopener external" target="_blank" href="https://github.com/iliazeus/furi-cpp">в моем репозитории</a>, а в этой статье я попытаюсь описать, какие конкретные фичи языка я использовал, и как именно они мне помогли.</p>
+<p><img src="https://iliazeus.lol/articles/flipper-c-with-classes-ru/cover.png" alt="демонстрация того, что у меня получилось" /></p>
+<p>Сразу скажу, что моей целью не было написание полноценных C++-биндингов для API флиппера. Конечно же, обернув функции здешнего API в классы, используя конструкторы и деструкторы вместо <code>_alloc()</code>- и <code>_free()</code>-функций, а некоторые интерфейсы переписав совсем, я смог бы писать намного более идиоматичный код с точки зрения современного C++. Однако это потребовало бы намного больших затрат времени на написание, документацию и поддержку. Вместо этого, я искал от C++ способы как можно более простым способом избавиться от самых больших неудобств — некоторыми из которых и хочу с вами поделиться.</p>
+<h2 id="prostranstva-imen"><a class="anchor" href="#prostranstva-imen" title="link to section">#</a>Пространства имен</h2>
+<p>В сишных API функции и константы, как правило, называются с длинными префиксами: <code>mylib_mything_get_foo()</code>, <code>MylibMyenumFirst</code>. Порой это делает код чрезвычайно многословным — особенно в тех случаях, когда из контекста функции вполне понятно, что <code>get_foo()</code> мы вызываем именно для <code>mything</code> из библиотеки <code>mylib</code>. Поэтому, прежде всего, я хотел раскидать имена по отдельным пространствам имен.</p>
+<p>Для типов это можно сделать, просто добавив типы-аласы. Вроде таких:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> Timer</span><span class="z-keyword z-operator"> =</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">FuriTimer</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> Mutex</span><span class="z-keyword z-operator"> =</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">FuriMutex</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Для функций все чуть более интересно:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-source"> furi</span><span class="z-punctuation">::</span><span class="z-entity z-name z-namespace">mutex</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-modifier">  constexpr</span><span class="z-storage z-modifier"> inline</span><span class="z-storage z-type"> auto</span><span class="z-keyword z-operator">&amp;</span><span class="z-source"> acquire </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_acquire</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Подход с ссылками имеет сразу несколько плюсов. Во-первых, <code>constexpr</code>-ссылки гарантированно хорошо инлайнятся, превращаясь просто в вызовы оригиналов — в моих тестах у меня не было не-встроенных вызовов. Во-вторых, это - в отличие, например, от написания оберток — не требует повторять сигнатуру исходной функции. Более того, моя IDE даже подтянула для таких ссылок документацию оригиналов:</p>
+<p><img src="https://iliazeus.lol/articles/flipper-c-with-classes-ru/function-reference-docs.png" alt="пример документации во всплывающей подсказке IDE" /></p>
+<p>Для того, чтобы не писать в каждой строчке <code>constexpr inline auto&amp;</code>, я определил для этого макрос <code>FURI_HH_ALIAS</code>. Для макросов в C++, к сожалению, пространств имен нет, поэтому его пришлось назвать с префиксом.</p>
+<p>Остались только <code>enum</code>ы. Идиоматичным C++ было бы использовать для них <code>enum class</code> — но проблема в том, что это будут другие типы, и один в другой сами по себе конвертироваться не будут. Поэтому остановился на алиасах и константах в отдельном <code>namespace</code>, для которых использовал все тот же макрос <code>FURI_HH_ALIAS</code>:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-source"> furi</span><span class="z-punctuation">::</span><span class="z-entity z-name z-namespace">mutex</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> Type</span><span class="z-keyword z-operator"> =</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">FuriMutexType</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  namespace</span><span class="z-entity z-name z-namespace"> type</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS Normal </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::FuriMutexTypeNormal</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS Recursive </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::FuriMutexTypeRecursive</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>В итоге, мои заголовочные файлы стали выглядеть как-то так:</p>
+<details>
+<summary>mutex.hh</summary>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">pragma</span><span class="z-entity z-other z-attribute-name"> once</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">furi.h</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">include</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">furi/macros.hh</span><span class="z-punctuation z-definition z-string">&quot;</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">include</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">furi/own.hh</span><span class="z-punctuation z-definition z-string">&quot;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> Mutex</span><span class="z-keyword z-operator"> =</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">FuriMutex</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> MutexOwn</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-type"> Own</span><span class="z-punctuation">&lt;</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FuriMutex</span><span class="z-punctuation">,</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">furi_mutex_free</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">  namespace</span><span class="z-entity z-name z-namespace"> mutex</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    using</span><span class="z-entity z-name z-type"> Type</span><span class="z-keyword z-operator"> =</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">FuriMutexType</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    namespace</span><span class="z-entity z-name z-namespace"> type</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-source">      FURI_HH_ALIAS Normal </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::FuriMutexTypeNormal</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">      FURI_HH_ALIAS Recursive </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::FuriMutexTypeRecursive</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">    }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS alloc </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_alloc</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS free </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_free</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS acquire </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_acquire</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS release </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_release</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FURI_HH_ALIAS get_owner </span><span class="z-keyword z-operator">=</span><span class="z-source"> ::furi_mutex_get_owner</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre></details>
+<h2 id="vladeiushchie-ukazateli"><a class="anchor" href="#vladeiushchie-ukazateli" title="link to section">#</a>Владеющие указатели</h2>
+<p>Следующее неудобство, от которого я хотел бы избавиться — необходимость не забывать вручную освобождать ресурсы. Возможно, я просто слишком привык к языкам, в которых есть <code>using</code>, деструкторы или хотя бы <code>try-finally</code>, но мне действительно бывает сложно следить за этим самому. Особенно в случае ранних возвратов из функций, или передачи владения указателем.</p>
+<p>Стандартный "владеющий" указатель в C++ — это <code>std::unique_ptr</code>. Но он мне не подошел по нескольким причинам.</p>
+<p>Первая довольно прозаична: <code>std::unique_ptr&lt;T&gt;</code> не конвертируется автоматически в <code>T*</code>, для этого нужно явно вызывать метод <code>.get()</code>. В API Флиппера владение указателем, как правило, в функцию не передается — исключая <code>_free()</code>-функции, конечно. А писать везде <code>.get()</code> получается слишком многословно.</p>
+<p>Другая проблема немного сложнее, и связана с тем, как именно устроены API Флиппера и логика.</p>
+<p>У <code>std::unique_ptr</code> есть возможность указать вторым параметром шаблона объект <code>Deleter</code>, который <a rel="noopener external" target="_blank" href="https://en.cppreference.com/w/cpp/memory/unique_ptr/get_deleter">будет отвечать</a> за то, как именно будет освобожден указатель. Логика достаточно простая: для типа <code>T</code> у него должен быть <code>operator()(T*)</code>, который этот указатель и освободит.</p>
+<p>Сначала я хотел завести свою структуру <code>Deleter</code>, и просто перегружать ее <code>operator()</code> для каждого из типов в API:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-modifier">inline</span><span class="z-storage z-type"> void</span><span class="z-source"> Deleter</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">Mutex</span><span class="z-keyword z-operator">&gt;</span><span class="z-keyword">operator</span><span class="z-source">()</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">Mutex</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> m</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-source">  ::</span><span class="z-entity z-name z-function">furi_mutex_free</span><span class="z-punctuation">(</span><span class="z-source">m</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Но довольно быстро выяснилась очень обидная особенность API Флиппера.</p>
+<p>Как правило, когда в сишных API фигурируют указатели, они часто "непрозрачные" — не предназначены для разыменования пользователем, а только для использования с этим же самым API. Они обычно реализуются так:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> объявление структуры без указания полей</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> struct</span><span class="z-source"> MyStruct</span><span class="z-entity z-name z-type"> MyStruct</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> использование в объявлениях функций</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-type">MyStruct</span><span class="z-storage z-modifier">*</span><span class="z-entity z-name z-function"> mystruct_alloc</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span></code></pre>
+<p>Но в заголовках Флиппера часто встречается вот такое:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> furi/core/mutex.h</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-source"> FuriMutex</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> furi/core/timer.h</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-source"> FuriTimer</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> furi/code/message_queue.h</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-source"> FuriMessageQueue</span><span class="z-punctuation">;</span></span></code></pre>
+<p>Подвох в этом в том, что с точки зрения системы типов все эти объявления — это один и тот же тип! А это значит, что по ним не работают перегрузки, и просто взять и перегрузить один и тот же <code>Deleter::operator()</code> для них не получится.</p>
+<p>Пользуясь случаем: если это читают разработчики Флиппера — pls fix.</p>
+<p>А я, в итоге, написал небольшую обертку над стандартным <code>std::unique_ptr</code>. Вот так выглядят объявления владеющих указателей:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> MutexOwn</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-type"> Own</span><span class="z-punctuation">&lt;</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FuriMutex</span><span class="z-punctuation">,</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">furi_mutex_free</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> TimerOwn</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-type"> Own</span><span class="z-punctuation">&lt;</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FuriTimer</span><span class="z-punctuation">,</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">furi_timer_free</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-entity z-name z-type"> MessageQueueOwn</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-type"> Own</span><span class="z-punctuation">&lt;</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FuriMessageQueue</span><span class="z-punctuation">,</span><span class="z-punctuation"> ::</span><span class="z-entity z-name z-type">furi_message_queue_free</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Вот так их можно использовать:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-keyword">  using</span><span class="z-storage z-type"> namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> создание</span></span>
+<span class="giallo-l"><span class="z-source">  MutexOwn m </span><span class="z-keyword z-operator">=</span><span class="z-entity z-name z-scope-resolution z-cpp"> mutex</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">alloc</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> использование</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  auto</span><span class="z-source"> thread_id </span><span class="z-keyword z-operator">=</span><span class="z-entity z-name z-scope-resolution z-cpp"> mutex</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">get_owner</span><span class="z-punctuation">(</span><span class="z-source">m</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> освобождение — автоматически</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> но если очень нужно, все еще можно руками</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-scope-resolution z-cpp">  mutex</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">free</span><span class="z-punctuation">(</span><span class="z-source">std</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">move</span><span class="z-punctuation">(</span><span class="z-source">m</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>А вот так выглядит реализация:</p>
+<details>
+<summary>own.hh</summary>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">pragma</span><span class="z-entity z-other z-attribute-name"> once</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">include</span><span class="z-punctuation z-definition z-string"> &lt;</span><span class="z-string">memory</span><span class="z-punctuation z-definition z-string">&gt;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  namespace</span><span class="z-entity z-name z-namespace"> own</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> T</span><span class="z-punctuation">&gt;</span><span class="z-keyword"> using</span><span class="z-entity z-name z-type"> Free</span><span class="z-keyword z-operator"> =</span><span class="z-storage z-type"> void</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">&amp;</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-source">T</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">  template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> T</span><span class="z-punctuation">,</span><span class="z-source"> own</span><span class="z-punctuation">::</span><span class="z-source">Free</span><span class="z-punctuation">&lt;</span><span class="z-entity z-name z-type">T</span><span class="z-punctuation">&gt;</span><span class="z-storage z-type"> F</span><span class="z-punctuation">&gt;</span><span class="z-storage z-type"> class</span><span class="z-entity z-name z-type"> Own</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    struct</span><span class="z-entity z-name z-type"> _Destroy</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">      void</span><span class="z-keyword"> operator</span><span class="z-source">()</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">T</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> ptr</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-entity z-name z-function"> F</span><span class="z-punctuation">(</span><span class="z-source">ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"><span class="z-punctuation">    }</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-scope-resolution z-cpp">    std</span><span class="z-punctuation">::</span><span class="z-source">unique_ptr</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">T</span><span class="z-punctuation">,</span><span class="z-source"> _Destroy</span><span class="z-keyword z-operator">&gt;</span><span class="z-source"> _ptr</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">  public</span><span class="z-punctuation">:</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Own</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> _ptr</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">,</span><span class="z-source"> _Destroy{}</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Own</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">T</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> _ptr</span><span class="z-punctuation">(</span><span class="z-source">ptr</span><span class="z-punctuation">,</span><span class="z-source"> _Destroy{}</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Own</span><span class="z-punctuation">(</span><span class="z-storage z-modifier">const</span><span class="z-entity z-name z-type"> Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-punctuation">)</span><span class="z-keyword z-operator"> =</span><span class="z-keyword"> delete</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Own</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-punctuation">)</span><span class="z-keyword z-operator"> =</span><span class="z-keyword"> default</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-type">    Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-keyword"> operator</span><span class="z-source">=</span><span class="z-punctuation">(</span><span class="z-storage z-modifier">const</span><span class="z-entity z-name z-type"> Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-punctuation">)</span><span class="z-keyword z-operator"> =</span><span class="z-keyword"> delete</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-type">    Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-keyword"> operator</span><span class="z-source">=</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">Own</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-punctuation">)</span><span class="z-keyword z-operator"> =</span><span class="z-keyword"> default</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-keyword">    operator</span><span class="z-source"> T</span><span class="z-source">*</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-keyword"> return</span><span class="z-source"> _ptr</span><span class="z-punctuation">.</span><span class="z-entity z-name z-function">get</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"><span class="z-source">    operator</span><span class="z-storage z-modifier"> const</span><span class="z-source"> T</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-storage z-modifier"> const</span><span class="z-punctuation"> {</span><span class="z-keyword"> return</span><span class="z-source"> _ptr</span><span class="z-punctuation">.</span><span class="z-entity z-name z-function">get</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-type">    T</span><span class="z-storage z-modifier">*</span><span class="z-entity z-name z-function"> get_mut</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-storage z-modifier"> const</span><span class="z-punctuation"> {</span><span class="z-keyword"> return</span><span class="z-source"> _ptr</span><span class="z-punctuation">.</span><span class="z-entity z-name z-function">get</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre></details>
+<h2 id="defer"><a class="anchor" href="#defer" title="link to section">#</a>defer</h2>
+<p>Недостаток RAII я чувствовал не только для выделения-освобождения памяти, но и многих других действий. Например, захвата и освобождения мьютексов. Или удаления <code>ViewPort</code> из GUI перед вызовом <code>view_port_free()</code> — этот баг я искал довольно долго. Писать для каждого такого случая свой guard-класс мне не хотелось, поэтому позаимствовал идею из других языков — реализовал <code>defer</code>.</p>
+<p>Использовать его можно примерно так:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-scope-resolution z-cpp">  mutex</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">acquire</span><span class="z-punctuation">(</span><span class="z-source">m</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">  defer</span><span class="z-punctuation"> (</span><span class="z-source">mutex</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">release</span><span class="z-punctuation">(</span><span class="z-source">m</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> здесь мьютекс освобожден</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation">{</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-scope-resolution z-cpp">  gui</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">add_view_port</span><span class="z-punctuation">(</span><span class="z-source">gui</span><span class="z-punctuation">,</span><span class="z-source"> vp</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">  defer</span><span class="z-punctuation"> (</span><span class="z-source">gui</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">remove_view_port</span><span class="z-punctuation">(</span><span class="z-source">gui</span><span class="z-punctuation">,</span><span class="z-source"> vp</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> здесь ViewPort удален</span></span></code></pre>
+<p>Реализация ничем не примечательна — идея довольно стара:</p>
+<details>
+<summary>defer.hh</summary>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">pragma</span><span class="z-entity z-other z-attribute-name"> once</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">include</span><span class="z-punctuation z-definition z-string"> &quot;</span><span class="z-string">furi/macros.hh</span><span class="z-punctuation z-definition z-string">&quot;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> F</span><span class="z-punctuation">&gt;</span><span class="z-storage z-type"> class</span><span class="z-entity z-name z-type"> Defer</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-source">    F _fn</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">  public</span><span class="z-punctuation">:</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Defer</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">F</span><span class="z-storage z-modifier z-reference z-cpp"> &amp;</span><span class="z-storage z-modifier z-reference z-cpp">&amp;</span><span class="z-variable z-parameter">fn</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> _fn</span><span class="z-punctuation">(</span><span class="z-source">fn</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    ~Defer</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-entity z-name z-function"> _fn</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">  #</span><span class="z-keyword z-control z-directive">define</span><span class="z-entity z-name z-function"> FURI_HH_CONCAT_IMPL</span><span class="z-punctuation">(</span><span class="z-variable z-parameter">x</span><span class="z-punctuation">,</span><span class="z-variable z-parameter">y</span><span class="z-punctuation">)</span><span class="z-source"> x</span><span class="z-source">##y</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">  #</span><span class="z-keyword z-control z-directive">define</span><span class="z-entity z-name z-function"> FURI_HH_CONCAT</span><span class="z-punctuation">(</span><span class="z-variable z-parameter">x</span><span class="z-punctuation">,</span><span class="z-variable z-parameter">y</span><span class="z-punctuation">)</span><span class="z-entity z-name z-function"> FURI_HH_CONCAT_IMPL</span><span class="z-punctuation">(</span><span class="z-source">x</span><span class="z-punctuation">,</span><span class="z-source">y</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-directive">  #</span><span class="z-keyword z-control z-directive">define</span><span class="z-entity z-name z-function"> defer</span><span class="z-punctuation">(</span><span class="z-variable z-parameter">code</span><span class="z-punctuation">)</span><span class="z-storage z-type"> auto</span><span class="z-entity z-name z-function"> FURI_HH_CONCAT</span><span class="z-punctuation">(</span><span class="z-source">_defer_</span><span class="z-punctuation">,</span><span class="z-source"> __COUNTER__</span><span class="z-punctuation">)</span><span class="z-keyword z-operator"> =</span><span class="z-source"> Defer</span><span class="z-punctuation">{</span><span class="z-punctuation">[</span><span class="z-keyword z-operator">&amp;</span><span class="z-punctuation">]</span><span class="z-punctuation">{</span><span class="z-source"> code</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre></details>
+<h2 id="kolbeki"><a class="anchor" href="#kolbeki" title="link to section">#</a>Колбеки</h2>
+<p>В API Флиппера довольно много функций принимают колбеки — для того, чтобы уведомлять о событиях, или запускать код в другом потоке. Организовано это довольно стандартно для сишных API:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> в функцию передается указатель на колбек, а также указатель на ее контекст:</span></span>
+<span class="giallo-l"><span class="z-storage z-type">void</span><span class="z-entity z-name z-function"> furi_timer_pending_callback</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">FuriTimerPendigCallback</span><span class="z-variable z-parameter"> callback</span><span class="z-punctuation">,</span><span class="z-storage z-type"> void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> context</span><span class="z-punctuation">,</span><span class="z-storage z-type"> uint32_t</span><span class="z-variable z-parameter"> arg</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> когда колбек будет вызван, этот контекст ему будет передан:</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-punctuation"> (</span><span class="z-punctuation">*</span><span class="z-source">FuriTimerPendigCallback</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-storage z-type">void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> context</span><span class="z-punctuation">,</span><span class="z-storage z-type"> uint32_t</span><span class="z-variable z-parameter"> arg</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span></code></pre>
+<p>Неудобств в таком подходе два.</p>
+<p>Во-первых, это означает, что колбеки бывает нужно определять довольно далеко от места их использования. Для небольших колбеков это очень неудобно:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">void</span><span class="z-entity z-name z-function"> my_callback</span><span class="z-punctuation">(</span><span class="z-storage z-type">void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> ctx</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation z-definition z-comment"> /*</span><span class="z-comment">...</span><span class="z-punctuation z-definition z-comment">*/</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">void</span><span class="z-entity z-name z-function"> my_long_function</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">  mylib_use_callback</span><span class="z-punctuation">(</span><span class="z-source">ctx</span><span class="z-punctuation">,</span><span class="z-source"> my_callback</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Вернее, означало в C — а в C++ есть <a rel="noopener external" target="_blank" href="https://stackoverflow.com/a/18889029/7214622">"положительные" лямбды</a>! Они не могут захватывать переменные, но превращаются в указатель на функцию.</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-type">void</span><span class="z-entity z-name z-function"> my_long_function</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">  mylib_use_callback</span><span class="z-punctuation">(</span><span class="z-source">ctx</span><span class="z-punctuation">,</span><span class="z-keyword z-operator"> +</span><span class="z-punctuation">[</span><span class="z-punctuation">]</span><span class="z-punctuation">(</span><span class="z-storage z-type">void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> ctx</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation z-definition z-comment"> /*</span><span class="z-comment">...</span><span class="z-punctuation z-definition z-comment">*/</span><span class="z-punctuation"> }</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> ...</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Вторая проблема связана с типизацией. Единственный способ в сишном API сделать функцию обобщенной относительно контекста колбека — обращаться с ним как с <code>void*</code>. Но это приводит к необходимости кастов, и к возможности случайно скастить не в тот тип.</p>
+<p>В случае типов <code>FuriMutex</code> и <code>FuriTimer</code>, как мы видели выше, компилятор при этом даже не ругнется.</p>
+<p>Поэтому я решил написать свою простую структуру-обертку для пары "колбек-контекст"... но очень быстро наткнулся на еще одно не очень удачное — с точки зрения C++ — решение в API Флиппера:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> где-то контекст передается первым аргументом...</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-punctuation"> (</span><span class="z-punctuation">*</span><span class="z-source">FuriTimerPendigCallback</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-storage z-type">void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> context</span><span class="z-punctuation">,</span><span class="z-storage z-type"> uint32_t</span><span class="z-variable z-parameter"> arg</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> ...а где-то — последним!</span></span>
+<span class="giallo-l"><span class="z-keyword">typedef</span><span class="z-storage z-type"> void</span><span class="z-punctuation"> (</span><span class="z-punctuation">*</span><span class="z-source">ViewPortDrawCallback</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">Canvas</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> canvas</span><span class="z-punctuation">,</span><span class="z-storage z-type"> void</span><span class="z-storage z-modifier">*</span><span class="z-variable z-parameter"> context</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span></code></pre>
+<p>Я очень долго ломал голову над тем, как написать одну обертку на оба случая, но потом плюнул и просто написал две:</p>
+<details>
+<summary>callback.hh</summary>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-directive">#</span><span class="z-keyword z-control z-directive">pragma</span><span class="z-entity z-other z-attribute-name"> once</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">namespace</span><span class="z-entity z-name z-namespace"> furi</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  namespace</span><span class="z-entity z-name z-namespace"> cb</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-storage z-type">    template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-punctuation">...</span><span class="z-entity z-name z-type"> As</span><span class="z-punctuation">&gt;</span><span class="z-keyword"> using</span><span class="z-entity z-name z-type"> FnPtr</span><span class="z-keyword z-operator"> =</span><span class="z-storage z-type"> void</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">)</span><span class="z-punctuation">(</span><span class="z-source">As...</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> здесь контекст — первый агрумент</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-punctuation">...</span><span class="z-entity z-name z-type"> As</span><span class="z-punctuation">&gt;</span><span class="z-storage z-type"> struct</span><span class="z-entity z-name z-type"> Cb</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    using</span><span class="z-entity z-name z-type"> FnPtr</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-scope-resolution z-cpp"> cb</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FnPtr</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">void</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">,</span><span class="z-source"> As...</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    void</span><span class="z-keyword z-operator">*</span><span class="z-source"> ctx</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FnPtr fn_ptr</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Cb</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation">,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Cb</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">FnPtr</span><span class="z-variable z-parameter"> fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation">,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> C</span><span class="z-punctuation">&gt;</span><span class="z-entity z-name z-function"> Cb</span><span class="z-punctuation">(</span><span class="z-source">C</span><span class="z-keyword z-operator">*</span><span class="z-source"> ctx</span><span class="z-punctuation">,</span><span class="z-entity z-name z-scope-resolution z-cpp"> cb</span><span class="z-punctuation">::</span><span class="z-source">FnPtr</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">C</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">,</span><span class="z-source"> As...</span><span class="z-keyword z-operator">&gt;</span><span class="z-source"> fn_ptr</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-source">      :</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">static_cast</span><span class="z-keyword z-operator">&lt;</span><span class="z-storage z-type">void</span><span class="z-keyword z-operator">*</span><span class="z-keyword z-operator">&gt;</span><span class="z-punctuation">(</span><span class="z-source">ctx</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">      ,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">reinterpret_cast</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">FnPtr</span><span class="z-keyword z-operator">&gt;</span><span class="z-punctuation">(</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">      {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    void</span><span class="z-keyword"> operator</span><span class="z-source">()</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">As</span><span class="z-punctuation">...</span><span class="z-variable z-parameter"> args</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">      if</span><span class="z-punctuation"> (</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-source">ctx</span><span class="z-punctuation">,</span><span class="z-source"> args...</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">    }</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> а здесь — второй</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> хотел честно сделать последним,</span></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">  //</span><span class="z-comment"> но вывод типов почему-то сломался</span></span>
+<span class="giallo-l"><span class="z-storage z-type">  template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> A1</span><span class="z-punctuation">,</span><span class="z-storage z-type"> class</span><span class="z-punctuation">...</span><span class="z-entity z-name z-type"> As</span><span class="z-punctuation">&gt;</span><span class="z-storage z-type"> struct</span><span class="z-entity z-name z-type"> Cb2</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">    using</span><span class="z-entity z-name z-type"> FnPtr</span><span class="z-keyword z-operator"> =</span><span class="z-entity z-name z-scope-resolution z-cpp"> cb</span><span class="z-punctuation">::</span><span class="z-entity z-name z-type">FnPtr</span><span class="z-punctuation">&lt;</span><span class="z-entity z-name z-type">A1</span><span class="z-punctuation">,</span><span class="z-storage z-type"> void</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">,</span><span class="z-source"> As...</span><span class="z-punctuation">&gt;</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    void</span><span class="z-keyword z-operator">*</span><span class="z-source"> ctx</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-source">    FnPtr fn_ptr</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Cb2</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation">,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">    Cb2</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">FnPtr</span><span class="z-variable z-parameter"> fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">:</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-constant z-language">nullptr</span><span class="z-punctuation">)</span><span class="z-punctuation">,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    template</span><span class="z-punctuation">&lt;</span><span class="z-storage z-type">class</span><span class="z-entity z-name z-type"> C</span><span class="z-punctuation">&gt;</span><span class="z-entity z-name z-function"> Cb2</span><span class="z-punctuation">(</span><span class="z-source">C</span><span class="z-keyword z-operator">*</span><span class="z-source"> ctx</span><span class="z-punctuation">,</span><span class="z-entity z-name z-scope-resolution z-cpp"> cb</span><span class="z-punctuation">::</span><span class="z-source">FnPtr</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">A1</span><span class="z-punctuation">,</span><span class="z-source"> C</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">,</span><span class="z-source"> As...</span><span class="z-keyword z-operator">&gt;</span><span class="z-source"> fn_ptr</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-source">      :</span><span class="z-entity z-name z-function"> ctx</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">static_cast</span><span class="z-keyword z-operator">&lt;</span><span class="z-storage z-type">void</span><span class="z-keyword z-operator">*</span><span class="z-keyword z-operator">&gt;</span><span class="z-punctuation">(</span><span class="z-source">ctx</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">      ,</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-keyword z-operator">reinterpret_cast</span><span class="z-keyword z-operator">&lt;</span><span class="z-source">FnPtr</span><span class="z-keyword z-operator">&gt;</span><span class="z-punctuation">(</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-punctuation">)</span></span>
+<span class="giallo-l"><span class="z-punctuation">      {</span><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-type">    void</span><span class="z-keyword"> operator</span><span class="z-source">()</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">A1</span><span class="z-variable z-parameter"> a1</span><span class="z-punctuation">,</span><span class="z-entity z-name z-type"> As</span><span class="z-punctuation">...</span><span class="z-variable z-parameter"> args</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">      if</span><span class="z-punctuation"> (</span><span class="z-source">fn_ptr</span><span class="z-punctuation">)</span><span class="z-entity z-name z-function"> fn_ptr</span><span class="z-punctuation">(</span><span class="z-source">a1</span><span class="z-punctuation">,</span><span class="z-source"> ctx</span><span class="z-punctuation">,</span><span class="z-source"> args...</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">    }</span></span>
+<span class="giallo-l"><span class="z-punctuation">  }</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre></details>
+<p>Кроме этого, в самих функциях, принимающих колбеки, тоже есть неконсистентность: в некоторых колбек с контекстом — это последние аргументы, в некоторых нет, в а некоторых между ними стоит еще один аргумент. Поэтому для таких функций я все-таки решил написать обертки. Вот пример:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-storage z-modifier">inline</span><span class="z-storage z-type"> auto</span><span class="z-entity z-name z-function"> alloc_cb</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">Type</span><span class="z-variable z-parameter"> type</span><span class="z-punctuation">,</span><span class="z-entity z-name z-type"> Cb</span><span class="z-punctuation">&lt;</span><span class="z-punctuation">&gt;</span><span class="z-variable z-parameter"> cb</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  return</span><span class="z-entity z-name z-function"> alloc</span><span class="z-punctuation">(</span><span class="z-source">cb</span><span class="z-punctuation">.</span><span class="z-source">fn_ptr</span><span class="z-punctuation">,</span><span class="z-source"> type</span><span class="z-punctuation">,</span><span class="z-source"> cb</span><span class="z-punctuation">.</span><span class="z-source">ctx</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-storage z-modifier">inline</span><span class="z-storage z-type"> auto</span><span class="z-entity z-name z-function"> set_draw_callback_cb2</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">ViewPort</span><span class="z-storage z-modifier"> *</span><span class="z-variable z-parameter">vp</span><span class="z-punctuation">,</span><span class="z-entity z-name z-type"> Cb2</span><span class="z-punctuation">&lt;</span><span class="z-entity z-name z-type">Canvas</span><span class="z-keyword z-operator">*</span><span class="z-punctuation">&gt;</span><span class="z-variable z-parameter"> cb2</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span></span>
+<span class="giallo-l"><span class="z-keyword">  return</span><span class="z-entity z-name z-function"> set_draw_callback</span><span class="z-punctuation">(</span><span class="z-source">vp</span><span class="z-punctuation">,</span><span class="z-source"> cb2</span><span class="z-punctuation">.</span><span class="z-source">fn_ptr</span><span class="z-punctuation">,</span><span class="z-source"> cb2</span><span class="z-punctuation">.</span><span class="z-source">ctx</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"><span class="z-punctuation">}</span></span></code></pre>
+<p>Использовать их можно как-то так:</p>
+<pre class="giallo z-code"><code data-lang="cpp"><span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> со статическим методом</span></span>
+<span class="giallo-l"><span class="z-entity z-name z-function">set_draw_callback_cb2</span><span class="z-punctuation">(</span><span class="z-source">_vp</span><span class="z-punctuation">,</span><span class="z-source"> {</span><span class="z-variable z-language z-this">this</span><span class="z-punctuation">,</span><span class="z-source"> _draw}</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span>
+<span class="giallo-l"></span>
+<span class="giallo-l"><span class="z-punctuation z-definition z-comment">//</span><span class="z-comment"> с лямбдой и дополнительным синтаксическим сахаром</span></span>
+<span class="giallo-l"><span class="z-source">_timer </span><span class="z-keyword z-operator">=</span><span class="z-entity z-name z-scope-resolution z-cpp"> timer</span><span class="z-punctuation">::</span><span class="z-entity z-name z-function">alloc_cb</span><span class="z-punctuation">(</span></span>
+<span class="giallo-l"><span class="z-source">  Periodic</span><span class="z-punctuation">,</span></span>
+<span class="giallo-l"><span class="z-source">  Ctx{</span><span class="z-variable z-language z-this">this</span><span class="z-source">} </span><span class="z-keyword z-operator">&gt;&gt;</span><span class="z-keyword z-operator"> +</span><span class="z-punctuation">[</span><span class="z-punctuation">]</span><span class="z-punctuation">(</span><span class="z-entity z-name z-type">SecondTimer</span><span class="z-storage z-modifier"> *</span><span class="z-variable z-parameter">self</span><span class="z-punctuation">)</span><span class="z-punctuation"> {</span><span class="z-source"> self</span><span class="z-punctuation">-&gt;</span><span class="z-entity z-name z-function">_on_tick</span><span class="z-punctuation">(</span><span class="z-punctuation">)</span><span class="z-punctuation">;</span><span class="z-punctuation"> }</span></span>
+<span class="giallo-l"><span class="z-punctuation">)</span><span class="z-punctuation">;</span></span></code></pre><h2 id="zakliuchenie"><a class="anchor" href="#zakliuchenie" title="link to section">#</a>Заключение</h2>
+<p>Это были некоторые из примеров того, как в написании приложения для Флиппера мне помог Си-с-классами — а точнее, почти без классов, но с неймспейсами, RAII и так далее. Еще несколько примеров есть <a rel="noopener external" target="_blank" href="https://github.com/iliazeus/furi-cpp">в моем репозитории</a> — например, вот <a rel="noopener external" target="_blank" href="https://github.com/iliazeus/furi-cpp/blob/7e7536ab/app/app.hh#L93-L140">матчинг по типам событий</a> с помощью <code>std::variant</code>. Однако мне кажется, что их достаточно, чтобы продемонстрировать, что C++ может помочь в около-эмбеддед разработке. По крайней мере, если применять дозированно.</p>
+
+</main>
+
+    <footer>
+      <nav>
+        <ul class="horizontal small">
+          <li><a target="_blank" rel="me" href="https://gts.iliazeus.lol/@iliazeus">fediverse</a></li>
+          <li><a target="_blank" rel="me" href="https://github.com/iliazeus">github</a></li>
+          <li><a target="_blank" rel="me" href="https://habr.com/users/iliazeus">habr</a></li>
+          <li><a target="_blank" rel="me" href="email:iliazeus@proton.me">email</a></li>
+          <li>made with <a target="_blank" href="https://www.getzola.org/">Zola</a></li>
+          
+          <li>last updated on 2023-10-19</li>
+          
+        </ul>
+      </nav>
+    </footer>
+  </body>
+</html>
